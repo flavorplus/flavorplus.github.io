@@ -57,6 +57,15 @@
       margin-bottom: 16px;
     }
 
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .kiosk-button.active {
+      background: var(--success);
+    }
+
     h1 {
       margin: 0;
       font-size: clamp(24px, 6vw, 34px);
@@ -237,6 +246,120 @@
     .undo { background: #475569; }
     .clear { background: var(--danger); }
 
+    .secondary-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .tertiary-button {
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tertiary-button:hover,
+    .tertiary-button:focus-visible {
+      color: var(--text);
+      border-color: var(--text);
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
+
+    .payment-summary {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .payment-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+    }
+
+    .payment-line strong {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .received-input {
+      width: 100%;
+      min-height: 64px;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      background: #334155;
+      color: white;
+      font-size: 30px;
+      font-weight: 900;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .received-input:focus {
+      border-color: var(--accent);
+      outline: 3px solid rgba(251,191,36,.32);
+    }
+
+    .quick-amounts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .quick-amount {
+      min-height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #334155;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .change-result {
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #020617;
+      text-align: center;
+    }
+
+    .change-result-label {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .change-result-value {
+      margin-top: 4px;
+      color: var(--accent);
+      font-size: clamp(34px, 10vw, 52px);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .change-result-value.short {
+      color: #f87171;
+      font-size: clamp(26px, 8vw, 40px);
+    }
+
+    .kiosk-notice {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 14px;
+    }
+
     dialog {
       width: min(calc(100% - 28px), 520px);
       max-height: 90vh;
@@ -347,7 +470,10 @@
   <main class="app">
     <header>
       <h1>Bestelling</h1>
-      <button class="icon-button" id="settingsButton" aria-label="Prijsinstellingen">⚙️</button>
+      <div class="header-actions">
+        <button class="icon-button kiosk-button" id="kioskButton" aria-label="Kioskmodus starten" title="Kioskmodus">⛶</button>
+        <button class="icon-button" id="settingsButton" aria-label="Prijsinstellingen">⚙️</button>
+      </div>
     </header>
 
     <section class="products" id="productButtons" aria-label="Producten"></section>
@@ -365,6 +491,10 @@
       <button class="action-button undo" id="undoButton">Laatste terug</button>
       <button class="action-button clear" id="clearButton">Nieuwe bestelling</button>
     </section>
+
+    <section class="secondary-actions">
+      <button class="tertiary-button" id="changeButton">Wisselgeld berekenen</button>
+    </section>
   </main>
 
   <dialog id="settingsDialog">
@@ -377,6 +507,46 @@
       <div class="dialog-actions">
         <button type="button" class="cancel-button" id="cancelSettings">Annuleren</button>
         <button type="submit" class="save-button">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="changeDialog">
+    <form method="dialog" class="dialog-body" id="changeForm">
+      <div class="dialog-header">
+        <h2>Wisselgeld</h2>
+        <button type="button" class="icon-button" id="closeChange" aria-label="Sluiten">×</button>
+      </div>
+
+      <div class="payment-summary">
+        <div class="payment-line">
+          <span>Te betalen</span>
+          <strong id="paymentTotal">€ 0,00</strong>
+        </div>
+      </div>
+
+      <label for="receivedAmount">Ontvangen bedrag</label>
+      <input
+        class="received-input"
+        id="receivedAmount"
+        type="number"
+        min="0"
+        step="0.01"
+        inputmode="decimal"
+        placeholder="0,00"
+        autocomplete="off"
+      />
+
+      <div class="quick-amounts" id="quickAmounts"></div>
+
+      <div class="change-result">
+        <div class="change-result-label" id="changeResultLabel">Wisselgeld</div>
+        <div class="change-result-value" id="changeResultValue">€ 0,00</div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" id="clearReceived">Wissen</button>
+        <button type="submit" class="save-button">Klaar</button>
       </div>
     </form>
   </dialog>
@@ -405,7 +575,15 @@
     const totalValue = document.getElementById("totalValue");
     const settingsDialog = document.getElementById("settingsDialog");
     const settingsGrid = document.getElementById("settingsGrid");
+    const changeDialog = document.getElementById("changeDialog");
+    const receivedAmount = document.getElementById("receivedAmount");
+    const paymentTotal = document.getElementById("paymentTotal");
+    const quickAmounts = document.getElementById("quickAmounts");
+    const changeResultLabel = document.getElementById("changeResultLabel");
+    const changeResultValue = document.getElementById("changeResultValue");
+    const kioskButton = document.getElementById("kioskButton");
     const toast = document.getElementById("toast");
+    let kioskActive = false;
 
     function loadProducts() {
       try {
@@ -572,6 +750,144 @@
       showToast("Prijzen opgeslagen");
     }
 
+    function getOrderTotal() {
+      return products.reduce((sum, product) => {
+        return sum + (order[product.id] || 0) * product.price;
+      }, 0);
+    }
+
+    function openChangeDialog() {
+      const total = getOrderTotal();
+      if (total <= 0) {
+        showToast("Voeg eerst producten toe");
+        return;
+      }
+
+      paymentTotal.textContent = formatter.format(total);
+      receivedAmount.value = "";
+      buildQuickAmounts(total);
+      updateChangeResult();
+      changeDialog.showModal();
+      requestAnimationFrame(() => receivedAmount.focus());
+    }
+
+    function closeChangeDialog() {
+      changeDialog.close();
+    }
+
+    function buildQuickAmounts(total) {
+      const candidates = [
+        Math.ceil(total),
+        Math.ceil(total / 5) * 5,
+        Math.ceil(total / 10) * 10,
+        20,
+        50,
+        100
+      ];
+      const unique = [...new Set(candidates)]
+        .filter(value => value >= total && value > 0)
+        .sort((a, b) => a - b)
+        .slice(0, 6);
+
+      quickAmounts.innerHTML = "";
+      unique.forEach(value => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "quick-amount";
+        button.textContent = formatter.format(value);
+        button.addEventListener("click", () => {
+          receivedAmount.value = value.toFixed(2);
+          updateChangeResult();
+        });
+        quickAmounts.appendChild(button);
+      });
+    }
+
+    function parseReceivedAmount() {
+      const value = Number(String(receivedAmount.value).replace(",", "."));
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function updateChangeResult() {
+      const total = getOrderTotal();
+      const received = parseReceivedAmount();
+      const difference = received - total;
+
+      if (!receivedAmount.value) {
+        changeResultLabel.textContent = "Wisselgeld";
+        changeResultValue.textContent = formatter.format(0);
+        changeResultValue.classList.remove("short");
+        return;
+      }
+
+      if (difference < 0) {
+        changeResultLabel.textContent = "Nog te ontvangen";
+        changeResultValue.textContent = formatter.format(Math.abs(difference));
+        changeResultValue.classList.add("short");
+      } else {
+        changeResultLabel.textContent = "Wisselgeld";
+        changeResultValue.textContent = formatter.format(difference);
+        changeResultValue.classList.remove("short");
+      }
+    }
+
+    function isStandalone() {
+      return window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+    }
+
+    async function toggleKioskMode() {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+          return;
+        }
+
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+          kioskActive = true;
+          updateKioskButton();
+          showToast("Kioskmodus actief");
+          return;
+        }
+
+        if (isStandalone()) {
+          kioskActive = true;
+          updateKioskButton();
+          showToast("De geïnstalleerde app draait al zonder browserbalk");
+          return;
+        }
+
+        showToast("Installeer de app op het beginscherm voor kioskweergave");
+      } catch (_) {
+        showToast("Kioskmodus kon niet worden gestart");
+      }
+    }
+
+    function updateKioskButton() {
+      const active = Boolean(document.fullscreenElement) || kioskActive || isStandalone();
+      kioskButton.classList.toggle("active", active);
+      kioskButton.textContent = active ? "🔒" : "⛶";
+      kioskButton.setAttribute(
+        "aria-label",
+        active ? "Kioskmodus verlaten" : "Kioskmodus starten"
+      );
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+      kioskActive = Boolean(document.fullscreenElement);
+      updateKioskButton();
+      if (!document.fullscreenElement && !isStandalone()) {
+        showToast("Kioskmodus verlaten");
+      }
+    });
+
+    window.addEventListener("beforeunload", event => {
+      if (!kioskActive && !document.fullscreenElement) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+
     let toastTimer;
     function showToast(message) {
       toast.textContent = message;
@@ -586,6 +902,19 @@
     document.getElementById("settingsForm").addEventListener("submit", saveSettings);
     document.getElementById("undoButton").addEventListener("click", undoLast);
     document.getElementById("clearButton").addEventListener("click", clearOrder);
+    document.getElementById("changeButton").addEventListener("click", openChangeDialog);
+    document.getElementById("closeChange").addEventListener("click", closeChangeDialog);
+    document.getElementById("clearReceived").addEventListener("click", () => {
+      receivedAmount.value = "";
+      updateChangeResult();
+      receivedAmount.focus();
+    });
+    document.getElementById("changeForm").addEventListener("submit", event => {
+      event.preventDefault();
+      closeChangeDialog();
+    });
+    receivedAmount.addEventListener("input", updateChangeResult);
+    kioskButton.addEventListener("click", toggleKioskMode);
 
     settingsDialog.addEventListener("click", event => {
       const rect = settingsDialog.getBoundingClientRect();
@@ -597,8 +926,19 @@
       if (outside) closeSettings();
     });
 
+    changeDialog.addEventListener("click", event => {
+      const rect = changeDialog.getBoundingClientRect();
+      const outside =
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom;
+      if (outside) closeChangeDialog();
+    });
+
     renderProducts();
     renderOrder();
+    updateKioskButton();
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
