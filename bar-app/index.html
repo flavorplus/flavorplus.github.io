@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bar App" />
+  <title>Bar Bestelapp</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #0f172a;
+      --panel-2: #334155;
+      --text: #ffffff;
+      --muted: #e2e8f0;
+      --accent: #fbbf24;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --border: rgba(255,255,255,.24);
+      --shadow: 0 12px 28px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(245,158,11,.12), transparent 35%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      width: min(100%, 720px);
+      margin: 0 auto;
+      padding:
+        max(16px, env(safe-area-inset-top))
+        16px
+        max(18px, env(safe-area-inset-bottom));
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 6vw, 34px);
+      letter-spacing: -.03em;
+    }
+
+    .icon-button {
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 24px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .product-button {
+      min-height: 126px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(145deg, #475569, #1e293b);
+      color: var(--text);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform .08s ease, filter .08s ease;
+    }
+
+    .product-button:active {
+      transform: scale(.97);
+      filter: brightness(1.15);
+    }
+
+    .product-button:hover,
+    .product-button:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+      filter: brightness(1.12);
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible,
+    .action-button:focus-visible,
+    .minus-button:focus-visible,
+    .cancel-button:focus-visible,
+    .save-button:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    .product-name {
+      display: block;
+      font-size: clamp(24px, 7vw, 34px);
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+
+    .product-price {
+      display: block;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .panel {
+      background: rgba(15,23,42,.98);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    .order-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-row:last-child { border-bottom: 0; }
+
+    .order-main {
+      min-width: 0;
+    }
+
+    .order-name {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .order-meta {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 3px;
+    }
+
+    .order-subtotal {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .minus-button {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: #475569;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 2px solid var(--border);
+    }
+
+    .total-label {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .total-value {
+      font-size: clamp(30px, 9vw, 46px);
+      font-weight: 900;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 12px;
+    }
+
+    .action-button {
+      min-height: 58px;
+      border: 0;
+      border-radius: 16px;
+      color: white;
+      font-weight: 800;
+      font-size: 17px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .undo { background: #475569; }
+    .clear { background: var(--danger); }
+
+    dialog {
+      width: min(calc(100% - 28px), 520px);
+      max-height: 90vh;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: #0f172a;
+      color: var(--text);
+      padding: 0;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55);
+    }
+
+    dialog::backdrop {
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(3px);
+    }
+
+    .dialog-body { padding: 20px; }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .dialog-header h2 { margin: 0; }
+
+    .settings-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .setting-row label {
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .price-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #334155;
+      color: white;
+      font-size: 18px;
+      text-align: right;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .cancel-button, .save-button {
+      min-height: 52px;
+      border: 0;
+      border-radius: 14px;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .cancel-button { background: #475569; }
+    .save-button { background: var(--success); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      transform: translate(-50%, 20px);
+      background: #000000;
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 420px) {
+      .product-button { min-height: 112px; }
+      .actions { grid-template-columns: 1fr; }
+      .setting-row { grid-template-columns: 1fr 120px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Bestelling</h1>
+      <button class="icon-button" id="settingsButton" aria-label="Prijsinstellingen">⚙️</button>
+    </header>
+
+    <section class="products" id="productButtons" aria-label="Producten"></section>
+
+    <section class="panel" aria-live="polite">
+      <h2>Overzicht</h2>
+      <div id="orderOverview"></div>
+      <div class="total">
+        <span class="total-label">Totaal</span>
+        <span class="total-value" id="totalValue">€ 0,00</span>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button class="action-button undo" id="undoButton">Laatste terug</button>
+      <button class="action-button clear" id="clearButton">Nieuwe bestelling</button>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-body" id="settingsForm">
+      <div class="dialog-header">
+        <h2>Prijzen aanpassen</h2>
+        <button type="button" class="icon-button" id="closeSettings" aria-label="Sluiten">×</button>
+      </div>
+      <div class="settings-grid" id="settingsGrid"></div>
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" id="cancelSettings">Annuleren</button>
+        <button type="submit" class="save-button">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const DEFAULT_PRODUCTS = [
+      { id: "bier", name: "Bier", price: 3.00 },
+      { id: "wijn", name: "Wijn", price: 4.00 },
+      { id: "fris", name: "Fris", price: 2.50 },
+      { id: "stelz", name: "Stëlz", price: 4.00 }
+    ];
+
+    const formatter = new Intl.NumberFormat("nl-NL", {
+      style: "currency",
+      currency: "EUR"
+    });
+
+    let products = loadProducts();
+    let order = {};
+    let history = [];
+
+    const productButtons = document.getElementById("productButtons");
+    const orderOverview = document.getElementById("orderOverview");
+    const totalValue = document.getElementById("totalValue");
+    const settingsDialog = document.getElementById("settingsDialog");
+    const settingsGrid = document.getElementById("settingsGrid");
+    const toast = document.getElementById("toast");
+
+    function loadProducts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("bar-products"));
+        if (Array.isArray(saved) && saved.length === DEFAULT_PRODUCTS.length) {
+          return DEFAULT_PRODUCTS.map(defaultProduct => {
+            const match = saved.find(item => item.id === defaultProduct.id);
+            return match && Number.isFinite(Number(match.price))
+              ? { ...defaultProduct, price: Number(match.price) }
+              : defaultProduct;
+          });
+        }
+      } catch (_) {}
+      return structuredClone(DEFAULT_PRODUCTS);
+    }
+
+    function saveProducts() {
+      localStorage.setItem("bar-products", JSON.stringify(products));
+    }
+
+    function renderProducts() {
+      productButtons.innerHTML = "";
+      products.forEach(product => {
+        const button = document.createElement("button");
+        button.className = "product-button";
+        button.type = "button";
+        button.innerHTML = `
+          <span class="product-name">${product.name}</span>
+          <span class="product-price">${formatter.format(product.price)}</span>
+        `;
+        button.addEventListener("click", () => addProduct(product.id));
+        productButtons.appendChild(button);
+      });
+    }
+
+    function addProduct(id) {
+      order[id] = (order[id] || 0) + 1;
+      history.push(id);
+      if (navigator.vibrate) navigator.vibrate(20);
+      renderOrder();
+    }
+
+    function removeOne(id) {
+      if (!order[id]) return;
+      order[id] -= 1;
+      if (order[id] <= 0) delete order[id];
+
+      const lastIndex = history.lastIndexOf(id);
+      if (lastIndex >= 0) history.splice(lastIndex, 1);
+      renderOrder();
+    }
+
+    function undoLast() {
+      const id = history.pop();
+      if (!id) {
+        showToast("Er is niets om terug te draaien");
+        return;
+      }
+      order[id] -= 1;
+      if (order[id] <= 0) delete order[id];
+      renderOrder();
+    }
+
+    function clearOrder() {
+      if (Object.keys(order).length === 0) {
+        showToast("De bestelling is al leeg");
+        return;
+      }
+      if (confirm("Nieuwe bestelling starten en alles wissen?")) {
+        order = {};
+        history = [];
+        renderOrder();
+        showToast("Nieuwe bestelling gestart");
+      }
+    }
+
+    function renderOrder() {
+      const activeProducts = products.filter(product => order[product.id] > 0);
+
+      if (activeProducts.length === 0) {
+        orderOverview.innerHTML = `<div class="empty">Tik op een product om het toe te voegen.</div>`;
+        totalValue.textContent = formatter.format(0);
+        return;
+      }
+
+      orderOverview.innerHTML = "";
+      let total = 0;
+
+      activeProducts.forEach(product => {
+        const quantity = order[product.id];
+        const subtotal = quantity * product.price;
+        total += subtotal;
+
+        const row = document.createElement("div");
+        row.className = "order-row";
+        row.innerHTML = `
+          <div class="order-main">
+            <div class="order-name">${product.name}</div>
+            <div class="order-meta">${quantity} × ${formatter.format(product.price)}</div>
+          </div>
+          <div class="order-subtotal">${formatter.format(subtotal)}</div>
+        `;
+
+        const minusButton = document.createElement("button");
+        minusButton.type = "button";
+        minusButton.className = "minus-button";
+        minusButton.textContent = "−";
+        minusButton.setAttribute("aria-label", `Eén ${product.name} verwijderen`);
+        minusButton.addEventListener("click", () => removeOne(product.id));
+
+        row.appendChild(minusButton);
+        orderOverview.appendChild(row);
+      });
+
+      totalValue.textContent = formatter.format(total);
+    }
+
+    function openSettings() {
+      settingsGrid.innerHTML = "";
+      products.forEach(product => {
+        const row = document.createElement("div");
+        row.className = "setting-row";
+        row.innerHTML = `
+          <label for="price-${product.id}">${product.name}</label>
+          <input
+            class="price-input"
+            id="price-${product.id}"
+            name="${product.id}"
+            type="number"
+            min="0"
+            step="0.05"
+            inputmode="decimal"
+            value="${product.price.toFixed(2)}"
+            required
+          />
+        `;
+        settingsGrid.appendChild(row);
+      });
+      settingsDialog.showModal();
+    }
+
+    function closeSettings() {
+      settingsDialog.close();
+    }
+
+    function saveSettings(event) {
+      event.preventDefault();
+
+      const updated = products.map(product => {
+        const input = document.getElementById(`price-${product.id}`);
+        const value = Number(input.value.replace(",", "."));
+        if (!Number.isFinite(value) || value < 0) {
+          input.focus();
+          throw new Error("Ongeldige prijs");
+        }
+        return { ...product, price: value };
+      });
+
+      products = updated;
+      saveProducts();
+      renderProducts();
+      renderOrder();
+      settingsDialog.close();
+      showToast("Prijzen opgeslagen");
+    }
+
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    document.getElementById("settingsButton").addEventListener("click", openSettings);
+    document.getElementById("closeSettings").addEventListener("click", closeSettings);
+    document.getElementById("cancelSettings").addEventListener("click", closeSettings);
+    document.getElementById("settingsForm").addEventListener("submit", saveSettings);
+    document.getElementById("undoButton").addEventListener("click", undoLast);
+    document.getElementById("clearButton").addEventListener("click", clearOrder);
+
+    settingsDialog.addEventListener("click", event => {
+      const rect = settingsDialog.getBoundingClientRect();
+      const outside =
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom;
+      if (outside) closeSettings();
+    });
+
+    renderProducts();
+    renderOrder();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
