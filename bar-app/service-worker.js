@@ -1,4 +1,4 @@
-const VERSION="bar-bestelapp-v7";
+const VERSION="bar-bestelapp-v8";
 const APP_FILES=[
  "./",
  "./index.html",

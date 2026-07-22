@@ -609,6 +609,7 @@
     ];
 
     const PRODUCTS_STORAGE_KEY = "bar-bestelapp-products-v1";
+    const ORDER_STORAGE_KEY = "bar-bestelapp-order-v1";
 
     const formatter = new Intl.NumberFormat("nl-NL", {
       style: "currency",
@@ -704,6 +705,32 @@
       localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
     }
 
+    function saveState() {
+      localStorage.setItem(
+        ORDER_STORAGE_KEY,
+        JSON.stringify({ order, history })
+      );
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (!saved) return;
+
+      try {
+        const parsed = JSON.parse(saved);
+        order = parsed && typeof parsed.order === "object" && parsed.order
+          ? parsed.order
+          : {};
+        history = Array.isArray(parsed?.history)
+          ? parsed.history
+          : [];
+      } catch (error) {
+        console.warn("De opgeslagen bestelling kon niet worden geladen.", error);
+        order = {};
+        history = [];
+      }
+    }
+
     function makeUniqueId(name, existingIds, fallbackIndex) {
       const baseId = String(name || `product-${fallbackIndex + 1}`)
         .toLowerCase()
@@ -739,6 +766,7 @@
     function addProduct(id) {
       order[id] = (order[id] || 0) + 1;
       history.push(id);
+      saveState();
       if (navigator.vibrate) navigator.vibrate(20);
       renderOrder();
     }
@@ -750,6 +778,7 @@
 
       const lastIndex = history.lastIndexOf(id);
       if (lastIndex >= 0) history.splice(lastIndex, 1);
+      saveState();
       renderOrder();
     }
 
@@ -761,6 +790,7 @@
       }
       order[id] -= 1;
       if (order[id] <= 0) delete order[id];
+      saveState();
       renderOrder();
     }
 
@@ -772,6 +802,7 @@
       if (confirm("Nieuwe bestelling starten en alles wissen?")) {
         order = {};
         history = [];
+        saveState();
         renderOrder();
         showToast("Nieuwe bestelling gestart");
       }
@@ -1143,6 +1174,16 @@
 
     (async function initializeApp() {
       await loadProducts();
+      loadState();
+
+      // Remove order lines for products that no longer exist.
+      const validProductIds = new Set(products.map(product => product.id));
+      Object.keys(order).forEach(id => {
+        if (!validProductIds.has(id)) delete order[id];
+      });
+      history = history.filter(id => validProductIds.has(id));
+      saveState();
+
       renderProducts();
       renderOrder();
       updateKioskButton();
