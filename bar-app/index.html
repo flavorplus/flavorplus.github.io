@@ -906,8 +906,14 @@
       const nextProducts = [];
 
       rows.forEach((row, index) => {
-        const name = row.querySelector(".settings-name").value.trim();
-        const price = Number(row.querySelector(".settings-price").value);
+        const nameInput = row.querySelector(".settings-name");
+        const priceInput = row.querySelector(".settings-price");
+
+        // Ignore stale rows left by an older cached version.
+        if (!nameInput || !priceInput) return;
+
+        const name = nameInput.value.trim();
+        const price = Number(String(priceInput.value).replace(",", "."));
 
         if (!name) return;
 
@@ -946,26 +952,6 @@
       settingsDialog.close();
     }
 
-    function saveSettings(event) {
-      event.preventDefault();
-
-      const updated = products.map(product => {
-        const input = document.getElementById(`price-${product.id}`);
-        const value = Number(input.value.replace(",", "."));
-        if (!Number.isFinite(value) || value < 0) {
-          input.focus();
-          throw new Error("Ongeldige prijs");
-        }
-        return { ...product, price: value };
-      });
-
-      products = updated;
-      saveProducts();
-      renderProducts();
-      renderOrder();
-      settingsDialog.close();
-      showToast("Prijzen opgeslagen");
-    }
 
     function getOrderTotal() {
       return products.reduce((sum, product) => {
