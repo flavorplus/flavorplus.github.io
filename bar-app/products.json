@@ -1,0 +1,24 @@
+{
+  "products": [
+    {
+      "id": "bier",
+      "name": "Bier",
+      "price": 3.0
+    },
+    {
+      "id": "wijn",
+      "name": "Wijn",
+      "price": 4.0
+    },
+    {
+      "id": "fris",
+      "name": "Fris",
+      "price": 2.5
+    },
+    {
+      "id": "stelz",
+      "name": "Stëlz",
+      "price": 4.5
+    }
+  ]
+}

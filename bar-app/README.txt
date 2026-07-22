@@ -1,27 +1,25 @@
-BAR BESTELAPP
+Bar Bestelapp
 
 Bestanden:
-- index.html
-- manifest.webmanifest
-- service-worker.js
-- icon-192.png
-- icon-512.png
+- index.html: de app
+- products.json: standaard productlijst en prijzen
+- manifest.webmanifest: installatie-informatie
+- service-worker.js: offline cache
+- icon-192.png / icon-512.png: app-iconen
 
-Testen op een computer:
-1. Open een terminal in deze map.
-2. Start een eenvoudige webserver:
-   python3 -m http.server 8080
-3. Open http://localhost:8080
+Standaardproducten aanpassen:
+Pas products.json aan in de repository. Voorbeeld:
 
-Installeren op iPhone:
-1. Zet de bestanden op een website met HTTPS.
-2. Open de website in Safari.
-3. Tik op Delen.
-4. Kies 'Zet op beginscherm'.
+{
+  "products": [
+    { "id": "bier", "name": "Bier", "price": 3.00 },
+    { "id": "wijn", "name": "Wijn", "price": 4.00 }
+  ]
+}
 
-Installeren op Android:
-1. Zet de bestanden op een website met HTTPS.
-2. Open de website in Chrome.
-3. Kies 'App installeren' of 'Toevoegen aan startscherm'.
-
-De ingestelde prijzen worden lokaal op het apparaat opgeslagen.
+Belangrijk:
+- Productwijzigingen via de instellingen worden in localStorage op het apparaat opgeslagen.
+- Ze blijven bestaan na sluiten of opnieuw openen van de app.
+- Ze zijn apparaat- en browsergebonden en worden niet automatisch met andere apparaten gesynchroniseerd.
+- 'Standaard herstellen' laadt opnieuw de inhoud van products.json.
+- Alleen products.json aanpassen overschrijft bestaande lokale instellingen niet automatisch.

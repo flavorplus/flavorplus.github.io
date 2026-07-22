@@ -353,6 +353,49 @@
       font-size: clamp(26px, 8vw, 40px);
     }
 
+
+    .settings-product-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 110px 44px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .settings-product-row input {
+      min-height: 46px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 12px;
+      background: #334155;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .remove-product-button {
+      min-height: 44px;
+      border: 1px solid rgba(248,113,113,.7);
+      border-radius: 12px;
+      background: transparent;
+      color: #fecaca;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .product-settings-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 520px) {
+      .settings-product-row {
+        grid-template-columns: minmax(0, 1fr) 94px 42px;
+      }
+    }
+
     .kiosk-notice {
       color: var(--muted);
       font-size: 13px;
@@ -604,6 +647,83 @@
       localStorage.setItem("bar-products", JSON.stringify(products));
     }
 
+
+    function normalizeProduct(product, index) {
+      const name = String(product?.name || `Product ${index + 1}`).trim();
+      const price = Number(product?.price);
+      const rawId = String(product?.id || name || `product-${index + 1}`)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      return {
+        id: rawId || `product-${Date.now()}-${index}`,
+        name: name || `Product ${index + 1}`,
+        price: Number.isFinite(price) && price >= 0 ? price : 0
+      };
+    }
+
+    async function loadDefaultProducts() {
+      try {
+        const response = await fetch("./products.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("Defaults konden niet worden geladen");
+        const data = await response.json();
+        if (!Array.isArray(data.products)) throw new Error("Ongeldig products.json");
+        return data.products.map(normalizeProduct);
+      } catch (error) {
+        console.warn(error);
+        return [
+          { id: "bier", name: "Bier", price: 3.00 },
+          { id: "wijn", name: "Wijn", price: 4.00 },
+          { id: "fris", name: "Fris", price: 2.50 },
+          { id: "stelz", name: "Stëlz", price: 4.50 }
+        ];
+      }
+    }
+
+    async function loadProducts() {
+      const defaults = await loadDefaultProducts();
+      const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+
+      if (!saved) {
+        products = defaults;
+        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        products = Array.isArray(parsed) && parsed.length
+          ? parsed.map(normalizeProduct)
+          : defaults;
+      } catch {
+        products = defaults;
+      }
+    }
+
+    function saveProducts() {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    }
+
+    function makeUniqueId(name, existingIds, fallbackIndex) {
+      const baseId = String(name || `product-${fallbackIndex + 1}`)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || `product-${fallbackIndex + 1}`;
+
+      let id = baseId;
+      let suffix = 2;
+      while (existingIds.has(id)) {
+        id = `${baseId}-${suffix++}`;
+      }
+      existingIds.add(id);
+      return id;
+    }
+
     function renderProducts() {
       productButtons.innerHTML = "";
       products.forEach(product => {
@@ -703,26 +823,126 @@
 
     function openSettings() {
       settingsGrid.innerHTML = "";
-      products.forEach(product => {
+
+      products.forEach((product, index) => {
         const row = document.createElement("div");
-        row.className = "setting-row";
-        row.innerHTML = `
-          <label for="price-${product.id}">${product.name}</label>
-          <input
-            class="price-input"
-            id="price-${product.id}"
-            name="${product.id}"
-            type="number"
-            min="0"
-            step="0.05"
-            inputmode="decimal"
-            value="${product.price.toFixed(2)}"
-            required
-          />
-        `;
+        row.className = "settings-product-row";
+        row.dataset.index = index;
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.value = product.name;
+        nameInput.placeholder = "Productnaam";
+        nameInput.className = "settings-name";
+
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.min = "0";
+        priceInput.step = "0.01";
+        priceInput.inputMode = "decimal";
+        priceInput.value = product.price.toFixed(2);
+        priceInput.placeholder = "Prijs";
+        priceInput.className = "settings-price";
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "remove-product-button";
+        removeButton.setAttribute("aria-label", `${product.name} verwijderen`);
+        removeButton.textContent = "×";
+        removeButton.addEventListener("click", () => row.remove());
+
+        row.append(nameInput, priceInput, removeButton);
         settingsGrid.appendChild(row);
       });
+
       settingsDialog.showModal();
+    }
+
+    function addProductSettingsRow() {
+      const row = document.createElement("div");
+      row.className = "settings-product-row";
+
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = "Nieuw product";
+      nameInput.className = "settings-name";
+
+      const priceInput = document.createElement("input");
+      priceInput.type = "number";
+      priceInput.min = "0";
+      priceInput.step = "0.01";
+      priceInput.inputMode = "decimal";
+      priceInput.value = "0.00";
+      priceInput.placeholder = "Prijs";
+      priceInput.className = "settings-price";
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "remove-product-button";
+      removeButton.setAttribute("aria-label", "Product verwijderen");
+      removeButton.textContent = "×";
+      removeButton.addEventListener("click", () => row.remove());
+
+      row.append(nameInput, priceInput, removeButton);
+      settingsGrid.appendChild(row);
+      nameInput.focus();
+    }
+
+    async function resetProductsToDefaults() {
+      products = await loadDefaultProducts();
+      saveProducts();
+
+      Object.keys(order).forEach(key => delete order[key]);
+      history.length = 0;
+      saveState();
+      renderProducts();
+      renderOrder();
+      openSettings();
+      showToast("Standaardproducten hersteld");
+    }
+
+    function saveSettings(event) {
+      event.preventDefault();
+
+      const rows = [...settingsGrid.querySelectorAll(".settings-product-row")];
+      const existingIds = new Set();
+      const nextProducts = [];
+
+      rows.forEach((row, index) => {
+        const name = row.querySelector(".settings-name").value.trim();
+        const price = Number(row.querySelector(".settings-price").value);
+
+        if (!name) return;
+
+        const oldProduct = products[index];
+        const id = oldProduct && oldProduct.name === name && !existingIds.has(oldProduct.id)
+          ? (existingIds.add(oldProduct.id), oldProduct.id)
+          : makeUniqueId(name, existingIds, index);
+
+        nextProducts.push({
+          id,
+          name,
+          price: Number.isFinite(price) && price >= 0 ? price : 0
+        });
+      });
+
+      if (!nextProducts.length) {
+        showToast("Voeg minimaal één product toe");
+        return;
+      }
+
+      const validIds = new Set(nextProducts.map(product => product.id));
+      Object.keys(order).forEach(id => {
+        if (!validIds.has(id)) delete order[id];
+      });
+
+      products = nextProducts;
+      saveProducts();
+      saveState();
+      renderProducts();
+      renderOrder();
+      closeSettings();
+      showToast("Producten opgeslagen");
     }
 
     function closeSettings() {
@@ -936,9 +1156,12 @@
       if (outside) closeChangeDialog();
     });
 
-    renderProducts();
-    renderOrder();
-    updateKioskButton();
+    (async function initializeApp() {
+      await loadProducts();
+      renderProducts();
+      renderOrder();
+      updateKioskButton();
+    })();
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

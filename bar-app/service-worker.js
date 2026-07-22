@@ -1,8 +1,9 @@
-const VERSION="bar-bestelapp-v4";
+const VERSION="bar-bestelapp-v5";
 const APP_FILES=[
  "./",
  "./index.html",
  "./manifest.webmanifest",
+ "./products.json",
  "./icon-192.png",
  "./icon-512.png"
 ];
