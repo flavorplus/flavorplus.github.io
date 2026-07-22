@@ -8,17 +8,17 @@
     {
       "id": "wijn",
       "name": "Wijn",
-      "price": 4.0
+      "price": 5.0
     },
     {
       "id": "fris",
       "name": "Fris",
-      "price": 2.5
+      "price": 3.50
     },
     {
       "id": "stelz",
       "name": "Stëlz",
-      "price": 4.5
+      "price": 5.0
     }
   ]
 }
