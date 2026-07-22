@@ -547,6 +547,10 @@
         <button type="button" class="icon-button" id="closeSettings" aria-label="Sluiten">×</button>
       </div>
       <div class="settings-grid" id="settingsGrid"></div>
+      <div class="product-settings-actions">
+        <button type="button" class="tertiary-button" id="addProductButton">+ Product toevoegen</button>
+        <button type="button" class="tertiary-button" id="resetProductsButton">Standaard herstellen</button>
+      </div>
       <div class="dialog-actions">
         <button type="button" class="cancel-button" id="cancelSettings">Annuleren</button>
         <button type="submit" class="save-button">Opslaan</button>
@@ -597,19 +601,21 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const DEFAULT_PRODUCTS = [
+    const EMBEDDED_DEFAULT_PRODUCTS = [
       { id: "bier", name: "Bier", price: 3.00 },
       { id: "wijn", name: "Wijn", price: 4.00 },
       { id: "fris", name: "Fris", price: 2.50 },
-      { id: "stelz", name: "Stëlz", price: 4.00 }
+      { id: "stelz", name: "Stëlz", price: 4.50 }
     ];
+
+    const PRODUCTS_STORAGE_KEY = "bar-bestelapp-products-v1";
 
     const formatter = new Intl.NumberFormat("nl-NL", {
       style: "currency",
       currency: "EUR"
     });
 
-    let products = loadProducts();
+    let products = [];
     let order = {};
     let history = [];
 
@@ -628,25 +634,11 @@
     const toast = document.getElementById("toast");
     let kioskActive = false;
 
-    function loadProducts() {
-      try {
-        const saved = JSON.parse(localStorage.getItem("bar-products"));
-        if (Array.isArray(saved) && saved.length === DEFAULT_PRODUCTS.length) {
-          return DEFAULT_PRODUCTS.map(defaultProduct => {
-            const match = saved.find(item => item.id === defaultProduct.id);
-            return match && Number.isFinite(Number(match.price))
-              ? { ...defaultProduct, price: Number(match.price) }
-              : defaultProduct;
-          });
-        }
-      } catch (_) {}
-      return structuredClone(DEFAULT_PRODUCTS);
+    function cloneEmbeddedDefaults() {
+      return EMBEDDED_DEFAULT_PRODUCTS.map((product, index) =>
+        normalizeProduct(product, index)
+      );
     }
-
-    function saveProducts() {
-      localStorage.setItem("bar-products", JSON.stringify(products));
-    }
-
 
     function normalizeProduct(product, index) {
       const name = String(product?.name || `Product ${index + 1}`).trim();
@@ -666,20 +658,23 @@
     }
 
     async function loadDefaultProducts() {
+      // Browsers block fetch() from file:// pages. In that case the embedded
+      // fallback keeps the downloaded app fully functional.
+      if (window.location.protocol === "file:") {
+        return cloneEmbeddedDefaults();
+      }
+
       try {
         const response = await fetch("./products.json", { cache: "no-store" });
-        if (!response.ok) throw new Error("Defaults konden niet worden geladen");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        if (!Array.isArray(data.products)) throw new Error("Ongeldig products.json");
+        if (!Array.isArray(data.products) || !data.products.length) {
+          throw new Error("Ongeldig products.json");
+        }
         return data.products.map(normalizeProduct);
       } catch (error) {
-        console.warn(error);
-        return [
-          { id: "bier", name: "Bier", price: 3.00 },
-          { id: "wijn", name: "Wijn", price: 4.00 },
-          { id: "fris", name: "Fris", price: 2.50 },
-          { id: "stelz", name: "Stëlz", price: 4.50 }
-        ];
+        console.warn("products.json kon niet worden geladen; ingebouwde defaults worden gebruikt.", error);
+        return cloneEmbeddedDefaults();
       }
     }
 
@@ -689,7 +684,7 @@
 
       if (!saved) {
         products = defaults;
-        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+        saveProducts();
         return;
       }
 
@@ -698,8 +693,10 @@
         products = Array.isArray(parsed) && parsed.length
           ? parsed.map(normalizeProduct)
           : defaults;
-      } catch {
+      } catch (error) {
+        console.warn("Lokale productinstellingen waren ongeldig.", error);
         products = defaults;
+        saveProducts();
       }
     }
 
@@ -1120,6 +1117,8 @@
     document.getElementById("closeSettings").addEventListener("click", closeSettings);
     document.getElementById("cancelSettings").addEventListener("click", closeSettings);
     document.getElementById("settingsForm").addEventListener("submit", saveSettings);
+    document.getElementById("addProductButton").addEventListener("click", addProductSettingsRow);
+    document.getElementById("resetProductsButton").addEventListener("click", resetProductsToDefaults);
     document.getElementById("undoButton").addEventListener("click", undoLast);
     document.getElementById("clearButton").addEventListener("click", clearOrder);
     document.getElementById("changeButton").addEventListener("click", openChangeDialog);
@@ -1163,9 +1162,9 @@
       updateKioskButton();
     })();
 
-    if ("serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+        navigator.serviceWorker.register("./service-worker.js").catch(console.warn);
       });
     }
   </script>
