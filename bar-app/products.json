@@ -6,8 +6,13 @@
       "price": 3.90
     },
     {
+      "id": "big-beer",
+      "name": "Gr. bier",
+      "price": 6.60
+    },
+    {
       "id": "wijn",
-      "name": "Wijn",
+      "name": "Stëlz/Wijn",
       "price": 5.0
     },
     {
@@ -16,9 +21,14 @@
       "price": 3.50
     },
     {
-      "id": "stelz",
-      "name": "Stëlz",
-      "price": 5.0
+      "id": "rosebier",
+      "name": "Rosebier",
+      "price": 4.50
+    },
+    {
+      "id": "sbier",
+      "name": "Spec bier",
+      "price": 6.0
     }
   ]
 }
