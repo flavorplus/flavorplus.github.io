@@ -507,6 +507,37 @@
       .actions { grid-template-columns: 1fr; }
       .setting-row { grid-template-columns: 1fr 120px; }
     }
+
+    @media (min-width: 900px) {
+      .app {
+        width: min(100%, 1280px);
+        padding-right: 24px;
+        padding-left: 24px;
+      }
+
+      .desktop-layout {
+        display: grid;
+        grid-template-columns: minmax(420px, 1.15fr) minmax(360px, .85fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .products {
+        margin-bottom: 0;
+      }
+
+      .product-button {
+        min-height: 150px;
+      }
+
+      .product-name {
+        font-size: clamp(26px, 3vw, 38px);
+      }
+
+      .total-value {
+        font-size: clamp(34px, 4vw, 50px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -519,25 +550,29 @@
       </div>
     </header>
 
-    <section class="products" id="productButtons" aria-label="Producten"></section>
+    <div class="desktop-layout">
+      <section class="products" id="productButtons" aria-label="Producten"></section>
 
-    <section class="panel" aria-live="polite">
-      <h2>Overzicht</h2>
-      <div id="orderOverview"></div>
-      <div class="total">
-        <span class="total-label">Totaal</span>
-        <span class="total-value" id="totalValue">€ 0,00</span>
+      <div class="order-column">
+        <section class="panel" aria-live="polite">
+          <h2>Overzicht</h2>
+          <div id="orderOverview"></div>
+          <div class="total">
+            <span class="total-label">Totaal</span>
+            <span class="total-value" id="totalValue">€ 0,00</span>
+          </div>
+        </section>
+
+        <section class="actions">
+          <button class="action-button undo" id="undoButton">Laatste terug</button>
+          <button class="action-button clear" id="clearButton">Nieuwe bestelling</button>
+        </section>
+
+        <section class="secondary-actions">
+          <button class="tertiary-button" id="changeButton">Wisselgeld berekenen</button>
+        </section>
       </div>
-    </section>
-
-    <section class="actions">
-      <button class="action-button undo" id="undoButton">Laatste terug</button>
-      <button class="action-button clear" id="clearButton">Nieuwe bestelling</button>
-    </section>
-
-    <section class="secondary-actions">
-      <button class="tertiary-button" id="changeButton">Wisselgeld berekenen</button>
-    </section>
+    </div>
   </main>
 
   <dialog id="settingsDialog">
