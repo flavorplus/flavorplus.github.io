@@ -478,6 +478,7 @@
 
     .cancel-button { background: #475569; }
     .save-button { background: var(--success); }
+    .save-button.clear { background: var(--danger); }
 
     .toast {
       position: fixed;
@@ -633,6 +634,20 @@
     </form>
   </dialog>
 
+  <dialog id="clearDialog">
+    <form method="dialog" class="dialog-body" id="clearForm">
+      <div class="dialog-header">
+        <h2>Nieuwe bestelling?</h2>
+        <button type="button" class="icon-button" id="closeClear" aria-label="Sluiten">×</button>
+      </div>
+      <p>De huidige bestelling wordt volledig gewist.</p>
+      <div class="dialog-actions">
+        <button type="button" class="cancel-button" id="cancelClear">Annuleren</button>
+        <button type="submit" class="save-button clear">Bestelling wissen</button>
+      </div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -668,6 +683,7 @@
     const quickAmounts = document.getElementById("quickAmounts");
     const changeResultLabel = document.getElementById("changeResultLabel");
     const changeResultValue = document.getElementById("changeResultValue");
+    const clearDialog = document.getElementById("clearDialog");
     const kioskButton = document.getElementById("kioskButton");
     const toast = document.getElementById("toast");
     let kioskActive = false;
@@ -836,13 +852,21 @@
         showToast("De bestelling is al leeg");
         return;
       }
-      if (confirm("Nieuwe bestelling starten en alles wissen?")) {
-        order = {};
-        history = [];
-        saveState();
-        renderOrder();
-        showToast("Nieuwe bestelling gestart");
-      }
+      clearDialog.showModal();
+    }
+
+    function closeClearDialog() {
+      clearDialog.close();
+    }
+
+    function confirmClearOrder(event) {
+      event.preventDefault();
+      order = {};
+      history = [];
+      saveState();
+      renderOrder();
+      closeClearDialog();
+      showToast("Nieuwe bestelling gestart");
     }
 
     function renderOrder() {
@@ -1175,6 +1199,9 @@
     document.getElementById("resetProductsButton").addEventListener("click", resetProductsToDefaults);
     document.getElementById("undoButton").addEventListener("click", undoLast);
     document.getElementById("clearButton").addEventListener("click", clearOrder);
+    document.getElementById("closeClear").addEventListener("click", closeClearDialog);
+    document.getElementById("cancelClear").addEventListener("click", closeClearDialog);
+    document.getElementById("clearForm").addEventListener("submit", confirmClearOrder);
     document.getElementById("changeButton").addEventListener("click", openChangeDialog);
     document.getElementById("closeChange").addEventListener("click", closeChangeDialog);
     document.getElementById("clearReceived").addEventListener("click", () => {
